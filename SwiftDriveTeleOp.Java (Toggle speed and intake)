@@ -24,7 +24,7 @@ public class SwiftDriveTeleOp extends LinearOpMode {
     private boolean slowMode = false;
     private boolean previousA = false;
 
-    private boolean intakeOn = false;
+    private boolean highIntakeSpeed = false;
     private boolean previousB = false;
 
     // Ignore tiny joystick movements
@@ -87,10 +87,10 @@ public class SwiftDriveTeleOp extends LinearOpMode {
         imu.initialize(parameters);
 
         telemetry.addData("Status", "Ready");
-        telemetry.addLine("A: Toggle Slow Mode");
-        telemetry.addLine("B: Toggle Intake");
-        telemetry.addLine("Left Stick: Drive");
-        telemetry.addLine("Right Stick: Turn");
+        telemetry.addLine("A: Toggle Slow Drive");
+        telemetry.addLine("B: Toggle Intake Speed");
+        telemetry.addLine("Right Bumper: Intake Forward");
+        telemetry.addLine("Left Bumper: Intake Reverse");
         telemetry.update();
 
         waitForStart();
@@ -118,9 +118,9 @@ public class SwiftDriveTeleOp extends LinearOpMode {
 
             previousA = gamepad1.a;
 
-            // Toggle intake with B
+            // Toggle intake speed with B
             if (gamepad1.b && !previousB) {
-                intakeOn = !intakeOn;
+                highIntakeSpeed = !highIntakeSpeed;
             }
 
             previousB = gamepad1.b;
@@ -197,11 +197,17 @@ public class SwiftDriveTeleOp extends LinearOpMode {
             );
 
             // Intake speed
-            double intakePower = slowMode ? 1.0 : 0.5;
+            double intakePower = highIntakeSpeed ? 1.0 : 0.5;
 
-            if (intakeOn) {
+            // Right bumper = intake forward
+            // Left bumper = intake reverse
+            if (gamepad1.right_bumper) {
                 intake.setPower(intakePower);
-            } else {
+            }
+            else if (gamepad1.left_bumper) {
+                intake.setPower(-intakePower);
+            }
+            else {
                 intake.setPower(0);
             }
 
@@ -218,11 +224,12 @@ public class SwiftDriveTeleOp extends LinearOpMode {
             telemetry.addData("Drive Mode",
                     slowMode ? "SLOW (40%)" : "NORMAL (100%)");
 
-            telemetry.addData("Intake",
-                    intakeOn ? "ON" : "OFF");
-
             telemetry.addData("Intake Speed",
-                    slowMode ? "100%" : "50%");
+                    highIntakeSpeed ? "HIGH (100%)" : "LOW (50%)");
+
+            telemetry.addData("Intake Status",
+                    gamepad1.right_bumper ? "FORWARD" :
+                    gamepad1.left_bumper ? "REVERSE" : "STOPPED");
 
             telemetry.addData("IMU Correction",
                     translating && !manualTurning ? "ACTIVE" : "OFF");
